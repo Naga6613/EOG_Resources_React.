@@ -1,4 +1,4 @@
-import { takeEvery, call, put, cancel, all } from "redux-saga/effects";
+import { take, race, takeEvery, call, put, cancel, all } from "redux-saga/effects";
 import API from "../api";
 import * as actions from "../actions";
 
@@ -16,7 +16,6 @@ import * as actions from "../actions";
   Also -- the `*` in function is important; turns it into a "generator"
 
 */
-
 function* watchWeatherIdReceived(action) {
   const { id } = action;
   const { error, data } = yield call(API.findWeatherbyId, id);
@@ -51,10 +50,10 @@ function* watchFetchWeather(action) {
 }
 
 function* watchAppLoad() {
-  yield all([
-    takeEvery(actions.FETCH_WEATHER, watchFetchWeather),
-    takeEvery(actions.WEATHER_ID_RECEIVED, watchWeatherIdReceived)
-  ]);
+    yield all([
+      takeEvery(actions.FETCH_WEATHER, watchFetchWeather),
+      takeEvery(actions.WEATHER_ID_RECEIVED, watchWeatherIdReceived)
+    ]);
 }
 
 export default [watchAppLoad];

@@ -8,11 +8,11 @@ const initialState = {
   weather_state_name: "",
   latitude: null,
   longitude: null,
-  data: {}
+  data: {},
+  metricDetails: {}
 };
 
 const toF = c => (c * 9) / 5 + 32;
-
 const startLoading = (state, action) => {
   return { ...state, loading: true };
 };
@@ -41,11 +41,11 @@ const weatherDataRecevied = (state, action) => {
     data: action.data
   };
 };
-
 const handlers = {
   [actions.FETCH_WEATHER]: startLoading,
   [actions.WEATHER_ID_RECEIVED]: weatherIDReceived,
   [actions.WEATHER_DATA_RECEIVED]: weatherDataRecevied
+
 };
 
 export default (state = initialState, action) => {
