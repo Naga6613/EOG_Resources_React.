@@ -9,7 +9,7 @@ import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
 import { withStyles } from "@material-ui/core/styles";
 import AvatarRaw from "@material-ui/core/Avatar";
-import Plotly from 'plotly.js-dist';
+import Plot from 'react-plotly.js';
 
 const cardStyles = theme => ({
   root: {
@@ -24,9 +24,6 @@ const CardHeader = withStyles(cardStyles)(CardHeaderRaw);
 const avatarStyles = theme => ({
   root: {
     background: theme.palette.primary.main
-  },
-  title: {
-    color: "white"
   }
 });
 const Avatar = withStyles(avatarStyles)(AvatarRaw);
@@ -36,73 +33,52 @@ const styles = {
     margin: "5% 25%"
   },
   textCenter: {
-    'text-align': 'center'
+    'textAlign': 'center'
   }
 };
-
+const customeDateFormat = (yData) => {
+  return yData.map(duration => {
+    let minutes = parseInt((duration.timestamp / (1000 * 60)) % 60);
+    let hours = parseInt((duration.timestamp / (1000 * 60 * 60)) % 24);
+    hours = (hours < 10) ? "0" + hours : hours;
+    minutes = (minutes < 10) ? "0" + minutes : minutes;
+    return hours + ":" + minutes;
+  });
+}
 class Drone extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      time_x_data: [1, 2],
-      metrics_y_data: [300, 320],
-      data: [],
-      visClass: { width: '90%', height: '0px' }
-    }
   }
   componentDidMount() {
     this.props.onLoad();
   }
-  componentWillReceiveProps(nextProps) {
-    const { data } = nextProps.metricDetails;
-    if (data) {
-      let time_x_data = data.map(d => d.timestamp);
-      let metrics_y_data = data.map(d => d.metric);
-      this.setState({ time_x_data, metrics_y_data, data, visClass: { width: '90%', height: '250px', display: 'initial' } });
-      this.showDroneMetrics(time_x_data, metrics_y_data);
-    }
-  }
-  showDroneMetrics = (xData, yData) => {
-    const TESTER = document.getElementById('tester');
-    xData = this.customeDateFormat(xData);
-    while (TESTER.data && TESTER.data.length > 0) {
-      Plotly.deleteTraces(TESTER, [0]);
-    }
-    Plotly.plot(TESTER,
-      [{
-        x: xData,
-        y: yData
-      }],
-      {
-        margin: { t: 0 }, xaxis: {
-          title: 'Time'
-        }
-      },
-      { showSendToCloud: true });
-  }
-  customeDateFormat = (yData) => {
-    return yData.map(duration => {
-      let minutes = parseInt((duration / (1000 * 60)) % 60);
-      let hours = parseInt((duration / (1000 * 60 * 60)) % 24);
-      hours = (hours < 10) ? "0" + hours : hours;
-      minutes = (minutes < 10) ? "0" + minutes : minutes;
-      return hours + ":" + minutes;
-    });
-  }
-
   render() {
     const { classes } = this.props;
+    let visClass = { width: '90%', height: '0px', display: 'initial' };
+    if (!this.props.loading) {
+      visClass = { width: '90%', height: '250px' };
+    }
     return (
       <Card className={classes.card}>
         <CardHeader title="Drone Metrics" />
         <CardContent>
           <List>
-            <ListItem>
-              <Avatar>1</Avatar>
-              <ListItemText primary="Drone Visualization" />
-            </ListItem>
-            {this.props.loading ? <h3 style= {styles.textCenter}>Loading . . . </h3> : null }
-            <div id="tester" style={this.state.visClass}></div>
+            {this.props.loading ? <h3 style={styles.textCenter}>Loading . . . </h3> : null}
+            {!this.props.loading ?
+            <Plot
+              data={[
+                {
+                  x: this.props.time_x_data,
+                  y: this.props.metrics_y_data,
+                  type: 'scatter',
+                  mode: 'lines',
+                  marker: { color: 'smokeblue' },
+                }
+              ]}
+              layout={{height: '250px', title: 'Drone Visualization' }}
+            />
+            :
+            null }
           </List>
         </CardContent>
       </Card>
@@ -115,9 +91,25 @@ const mapState = (state, ownProps) => {
     loading,
     metricDetails
   } = state.drone;
+
+  const { data } = metricDetails;
+  let time_x_data = [];
+  let metrics_y_data = [];
+  if (data) {
+    time_x_data = customeDateFormat(data);
+    metrics_y_data = data.map(d => d.metric);
+    return {
+      loading,
+      time_x_data,
+      metrics_y_data
+    };
+  }
+
   return {
     loading,
-    metricDetails
+    metricDetails,
+    time_x_data,
+    metrics_y_data
   };
 };
 
